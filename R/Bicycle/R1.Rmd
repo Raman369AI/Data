@@ -1,0 +1,68 @@
+---
+title: "My1st"
+author: "Raman"
+date: "2023-01-01"
+output: html_document
+---
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+## Read the CSV file into variable initial.
+```{r Load libraries}
+library(tidyverse)
+library(lubridate)
+library(dbplyr)
+library(tidyr)
+library(janitor)
+library(dplyr)
+
+```
+### Read the CSV file and remove the NA values.
+```{r Read and exclude NA}
+initial<-read.csv("New.csv")
+N<-sample_n(initial,130000)
+N[N==""|N==" "]<-NA
+N<-na.exclude(N)
+
+
+```
+## Convert the Field4 and field5 , which are character to date-time
+```{r Conversion to Time}
+N$started_at<-ymd_hms(N$started_at)
+N$ended_at<-ymd_hms(N$ended_at)
+```
+## Extract the hours from the time columns and add the columns to N
+```{r Start hour calculation}
+start_hr<-hour(N$started_at)
+N<-cbind(N,start_hr)
+N$start_hr<-as.numeric(N$start_hr)
+```
+### Calculate the time differnce
+
+```{r Time Utilized}
+N<-N%>%
+  mutate(
+    t_1=difftime(ended_at,started_at)/3600,
+    .before=1)
+
+```
+
+```{r}
+N$t_1<-as.numeric(N$t_1)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r Plots, message=FALSE, warning=FALSE, paged.print=TRUE}
+p<-N|>group_by(start_hr,member_casual)|>summarize(t_t=sum(t_1)
+)
+ggplot(p,aes(x=start_hr,y=t_t,color=p$member_casual))+geom_point()+geom_smooth()
+```
+
+
+
